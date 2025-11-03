@@ -111,12 +111,12 @@ The application will start on `http://localhost:5001`
 
 ## Technical Details
 
-- **Backend**: Flask with session management and Server-Sent Events (SSE)
+- **Backend**: Flask with simple session management and Server-Sent Events (SSE)
 - **LLM**: Groq API using llama-3.1-8b-instant model
 - **Smart Detection**: AI-powered legal question classification
 - **Search**: Tavily Search API for real-time legal context
 - **Frontend**: Modern HTML5/CSS3/JavaScript with streaming support
-- **Memory**: Flask session with auto-clear on browser close
+- **Memory**: Flask session with auto-clear on browser close (no filesystem dependency)
 - **UI/UX**: Premium responsive design with animations and micro-interactions
 - **Streaming**: Real-time text streaming with typing effects
 - **Markdown**: Full markdown rendering for rich text display
@@ -127,11 +127,11 @@ The application will start on `http://localhost:5001`
 2. **Groq API 400 Error**: Ensure you're using a valid model name like `llama-3.1-8b-instant`
 3. **Import Errors**: Ensure all dependencies are installed with `pip install -r requirements.txt`
 4. **Port Issues**: If port 5001 is in use, modify the `port` parameter in `app.py`
-5. **Session Issues**: Chat history automatically clears when browser closes
+5. **Session Issues**: Chat history automatically clears when browser closes (no filesystem needed)
 6. **Dark Mode Issues**: Theme preference is stored in localStorage, clear browser data if needed
 7. **Streaming Issues**: If streaming doesn't work, app automatically falls back to regular responses
 8. **Mobile Issues**: App is fully responsive - refresh page if layout issues occur
-9. **Flask Context Errors**: Fixed - session management now works properly with streaming
+9. **Cookie Errors**: Fixed - simplified session management eliminates encoding issues
 
 ## License
 

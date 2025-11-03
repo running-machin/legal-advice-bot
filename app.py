@@ -1,24 +1,22 @@
 import os
 import re
 from flask import Flask, render_template, request, jsonify, session
-from flask_session import Session
 import requests
 import json
 from dotenv import load_dotenv
-from datetime import timedelta
+from datetime import datetime
 
 # Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
 
-# Configure session
+# Configure session - simple approach without Flask-Session
 app.config['SECRET_KEY'] = os.urandom(24)
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_PERMANENT'] = False  # Session expires when browser closes
-app.config['SESSION_USE_SIGNER'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)  # Backup timeout
-Session(app)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour in seconds
 
 def is_legal_related(query):
     """Check if the query is related to legal topics using Groq API"""
@@ -230,22 +228,23 @@ def chat_stream():
         data = request.get_json()
         user_message = data.get('message', '').strip()
         
+        # Get all session data BEFORE entering the generator
+        current_history = session.get('history', [])
+        
+        # Check if legal-related BEFORE streaming
+        is_legal = is_legal_related(user_message)
+        
         def generate():
             try:
-                # Step 1: Check if legal-related
+                # Step 1: Check if legal-related (already done above)
                 yield f"data: {json.dumps({'type': 'status', 'message': 'Checking if this is a legal question...', 'step': 'checking'})}\n\n"
-                
-                is_legal = is_legal_related(user_message)
                 
                 if not is_legal:
                     yield f"data: {json.dumps({'type': 'response', 'message': 'I can only assist with legal-related questions. Please ask about laws, rights, contracts, court procedures, or similar legal matters.', 'done': True})}\n\n"
                     return
                 
-                # Step 2: Get conversation context
+                # Step 2: Get conversation context (use pre-captured data)
                 yield f"data: {json.dumps({'type': 'status', 'message': 'Loading conversation context...', 'step': 'context'})}\n\n"
-                
-                # Get current history from session before streaming
-                current_history = session.get('history', [])
                 conversation_context = build_conversation_context_from_data(current_history)
                 
                 # Step 3: Search for legal information
@@ -312,8 +311,6 @@ def save_session():
             # Keep only last 10 exchanges
             if len(session['history']) > 10:
                 session['history'] = session['history'][-10:]
-            
-            session.modified = True
         
         return jsonify({'success': True})
         
@@ -336,9 +333,12 @@ def build_conversation_context_from_data(history):
 @app.route('/clear', methods=['POST'])
 def clear_history():
     """Clear conversation history"""
-    session['history'] = []
-    session.modified = True
-    return jsonify({'success': True})
+    try:
+        session.clear()  # Clear the entire session
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Clear session error: {e}")
+        return jsonify({'error': 'Failed to clear session'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
