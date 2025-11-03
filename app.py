@@ -11,19 +11,51 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Configure session - simple approach without Flask-Session
-app.config['SECRET_KEY'] = os.urandom(24)
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour in seconds
+# Production-ready configuration
+is_production = os.environ.get('RENDER') == 'true'
+
+if is_production:
+    # Production settings
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(32))
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SECURE'] = True  # HTTPS only in production
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+else:
+    # Development settings
+    app.config['SECRET_KEY'] = os.urandom(24)
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SECURE'] = False  # Allow HTTP in development
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['PERMANENT_SESSION_LIFETIME'] = 3600
 
 def is_legal_related(query):
     """Check if the query is related to legal topics using Groq API"""
     try:
+        groq_api_key = os.getenv('GROQ_API_KEY')
+        if not groq_api_key:
+            # Fallback to keyword detection if no API key
+            query_lower = query.lower()
+            legal_keywords = [
+                'law', 'legal', 'lawyer', 'attorney', 'court', 'judge', 'contract', 'agreement',
+                'lawsuit', 'litigation', 'statute', 'regulation', 'rights', 'liability', 'damages',
+                'plaintiff', 'defendant', 'jurisdiction', 'precedent', 'case law', 'constitutional',
+                'criminal', 'civil', 'family law', 'corporate law', 'intellectual property',
+                'patent', 'trademark', 'copyright', 'employment law', 'tax law', 'immigration',
+                'real estate', 'property law', 'tort', 'negligence', 'breach', 'warranty',
+                'lease', 'deed', 'will', 'trust', 'estate', 'bankruptcy', 'divorce', 'custody',
+                'adoption', 'marriage', 'domestic', 'harassment', 'discrimination', 'federal',
+                'state', 'municipal', 'ordinance', 'code', 'act', 'bill', 'legislation',
+                'regulatory', 'compliance', 'violation', 'penalty', 'fine', 'imprisonment',
+                'probation', 'parole', 'arrest', 'warrant', 'subpoena', 'evidence', 'testimony',
+                'witness', 'jury', 'verdict', 'appeal', 'sentence', 'prosecution', 'defense',
+                'legal advice', 'counsel', 'representation', 'retainer', 'bar exam', 'esquire'
+            ]
+            return any(keyword in query_lower for keyword in legal_keywords)
+        
         url = "https://api.groq.com/openai/v1/chat/completions"
         headers = {
-            "Authorization": f"Bearer {os.getenv('GROQ_API_KEY')}",
+            "Authorization": f"Bearer {groq_api_key}",
             "Content-Type": "application/json"
         }
         
@@ -43,7 +75,7 @@ def is_legal_related(query):
             "temperature": 0.1
         }
         
-        response = requests.post(url, headers=headers, json=payload)
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
         response.raise_for_status()
         
         data = response.json()
@@ -75,10 +107,14 @@ def is_legal_related(query):
 def call_tavily_search(query):
     """Call Tavily Search API to get relevant context"""
     try:
+        tavily_api_key = os.getenv('TAVILY_API_KEY')
+        if not tavily_api_key:
+            return "Unable to retrieve legal context: Tavily API key not configured."
+        
         url = "https://api.tavily.com/search"
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {os.getenv('TAVILY_API_KEY')}"
+            "Authorization": f"Bearer {tavily_api_key}"
         }
         
         payload = {
@@ -91,7 +127,7 @@ def call_tavily_search(query):
             "exclude_domains": []
         }
         
-        response = requests.post(url, headers=headers, json=payload)
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
         response.raise_for_status()
         
         data = response.json()
@@ -111,9 +147,13 @@ def call_tavily_search(query):
 def call_groq_api(prompt):
     """Call Groq API for LLM inference"""
     try:
+        groq_api_key = os.getenv('GROQ_API_KEY')
+        if not groq_api_key:
+            return "I apologize, but the Groq API key is not configured. Please contact the administrator."
+        
         url = "https://api.groq.com/openai/v1/chat/completions"
         headers = {
-            "Authorization": f"Bearer {os.getenv('GROQ_API_KEY')}",
+            "Authorization": f"Bearer {groq_api_key}",
             "Content-Type": "application/json"
         }
         
@@ -133,7 +173,7 @@ def call_groq_api(prompt):
             "temperature": 0.3
         }
         
-        response = requests.post(url, headers=headers, json=payload)
+        response = requests.post(url, headers=headers, json=payload, timeout=60)
         response.raise_for_status()
         
         data = response.json()
@@ -209,8 +249,6 @@ Please provide a clear, informative response that addresses the user's legal que
         # Keep only last 10 exchanges to prevent session from getting too large
         if len(session['history']) > 10:
             session['history'] = session['history'][-10:]
-        
-        session.modified = True
         
         return jsonify({
             'response': ai_response,
@@ -340,5 +378,16 @@ def clear_history():
         print(f"Clear session error: {e}")
         return jsonify({'error': 'Failed to clear session'}), 500
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Render.com"""
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'version': '1.0.0'
+    })
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    port = int(os.environ.get('PORT', 5001))
+    debug = not is_production
+    app.run(host='0.0.0.0', port=port, debug=debug)

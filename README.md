@@ -1,6 +1,10 @@
 # Legal Assistant - RAG Chat Application
 
-A minimal Flask web application that provides legal assistance using Retrieval-Augmented Generation (RAG) with Groq API and Tavily Search API.
+A production-ready **Flask** web application that provides legal assistance using Retrieval-Augmented Generation (RAG) with Groq API and Tavily Search API.
+
+## 🚀 **Ready for Render.com Deployment**
+
+This application is **fully configured and ready for deployment** on Render.com. See [DEPLOY.md](DEPLOY.md) for complete deployment instructions.
 
 ## Features
 
@@ -15,64 +19,93 @@ A minimal Flask web application that provides legal assistance using Retrieval-A
 - **🔄 Background Animations**: See what's happening - searching, processing, generating
 - **⌨️ Keyboard Shortcuts**: Ctrl+Shift+T (theme), Ctrl+L (clear), Enter (send)
 - **🎬 Streaming Effects**: Typing animations and cursor effects for natural chat feel
+- **🏥 Production Ready**: Health checks, error handling, security headers, environment variables
 
-## Setup Instructions
+## 🌐 **Live Demo**
 
-### 1. Install Dependencies
+Deploy your own instance in minutes on Render.com! See [DEPLOY.md](DEPLOY.md) for step-by-step instructions.
 
-```bash
-pip install -r requirements.txt
+## 📋 **Quick Start**
+
+### Local Development
+
+1. **Clone and install**:
+   ```bash
+   git clone https://github.com/yourusername/legal-assistant.git
+   cd legal-assistant
+   pip install -r requirements.txt
+   ```
+
+2. **Set up environment**:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your API keys
+   ```
+
+3. **Run locally**:
+   ```bash
+   python app.py
+   # or use: ./start.sh
+   ```
+
+4. **Visit**: `http://localhost:5001`
+
+### 🚀 **Deploy to Render.com**
+
+1. **Push to GitHub**
+2. **Connect to Render.com**
+3. **Set environment variables**
+4. **Deploy automatically**
+
+See [DEPLOY.md](DEPLOY.md) for detailed deployment instructions.
+
+## 🏗️ **Technology Stack**
+
+- **Backend**: Flask 2.3.3 (Python)
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript
+- **AI/LLM**: Groq API (llama-3.1-8b-instant)
+- **Search**: Tavily Search API
+- **Session**: Flask native sessions (no database required)
+- **Deployment**: Render.com compatible
+
+## 📁 **Project Structure**
+
+```
+legal-assistant/
+├── app.py                 # Main Flask application
+├── templates/
+│   └── index.html        # Frontend template
+├── requirements.txt      # Python dependencies
+├── .env.example          # Environment variables template
+├── Procfile              # Render process definition
+├── runtime.txt           # Python version
+├── render.yaml           # Render configuration
+├── DEPLOY.md             # Deployment guide
+├── README.md             # This file
+└── .gitignore            # Git ignore rules
 ```
 
-### 2. Set Environment Variables
+## 🎯 **Key Features**
 
-You can set environment variables in two ways:
+### **AI-Powered Legal Assistance**
+- Smart legal question detection using AI
+- Real-time web search for current legal information
+- Context-aware conversation memory
+- Fallback to keyword detection if API unavailable
 
-**Option A: Using .env file (Recommended)**
+### **Premium User Experience**
+- Beautiful, responsive design
+- Dark/light theme toggle
+- Real-time streaming responses
+- Typing animations and effects
+- Mobile-optimized interface
 
-1. Copy the example file:
-```bash
-cp .env.example .env
-```
-
-2. Edit the `.env` file and add your API keys:
-```
-GROQ_API_KEY=your_groq_api_key_here
-TAVILY_API_KEY=your_tavily_api_key_here
-```
-
-**Option B: Using environment variables**
-
-**For Linux/macOS:**
-```bash
-export GROQ_API_KEY="your_groq_api_key_here"
-export TAVILY_API_KEY="your_tavily_api_key_here"
-```
-
-**For Windows (Command Prompt):**
-```cmd
-set GROQ_API_KEY=your_groq_api_key_here
-set TAVILY_API_KEY=your_tavily_api_key_here
-```
-
-**For Windows (PowerShell):**
-```powershell
-$env:GROQ_API_KEY="your_groq_api_key_here"
-$env:TAVILY_API_KEY="your_tavily_api_key_here"
-```
-
-### 3. Get API Keys
-
-- **Groq API Key**: Sign up at [https://groq.com/](https://groq.com/) and get your API key from the dashboard
-- **Tavily API Key**: Sign up at [https://tavily.com/](https://tavily.com/) and get your API key from the dashboard
-
-### 4. Run the Application
-
-```bash
-python app.py
-```
-
-The application will start on `http://localhost:5001`
+### **Production Ready**
+- Health check endpoint
+- Environment variable configuration
+- Security headers and HTTPS support
+- Error handling and graceful fallbacks
+- Auto-deployment ready
 
 ## Usage
 

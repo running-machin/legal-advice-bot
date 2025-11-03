@@ -1,0 +1,37 @@
+services:
+  # Type of service
+  - type: web
+    # Name of your service
+    name: legal-assistant
+    # Environment variables
+    env: python
+    # Build configuration
+    buildCommand: pip install -r requirements.txt
+    # Start command
+    startCommand: python app.py
+    # Health check path
+    healthCheckPath: /health
+    # Auto-deploy on push to main branch
+    autoDeploy: true
+    # Plan (can be free or starter)
+    plan: free
+    # Environment variables (these will be set in Render dashboard)
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        value: 10000
+    # Add headers for security
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=()
